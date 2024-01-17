@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   useCreateAlbumMutation,
   useUpdateAlbumMutation,
@@ -10,29 +10,56 @@ export default function NewAlbumForm() {
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [updateAlbum, { isLoading: isUpdateLoading }] = useUpdateAlbumMutation();
   const [createAlbum, { isLoading: isCreateLoading }] = useCreateAlbumMutation();
-  const { data: albums, refetch } = useGetAlbumsQuery(); // Fetch the list of albums
-  const [deleteAlbum] = useDeleteAlbumMutation(); // Create a mutation for deleting albums
-
+  const { data: albums, refetch } = useGetAlbumsQuery();
+  const [deleteAlbum] = useDeleteAlbumMutation();
   const [selectedAlbum, setSelectedAlbum] = useState(null);
+
+  // Local state to store albums
+  const [localAlbums, setLocalAlbums] = useState([]);
+
+  // Initialize local albums with the data fetched from the API
+  useEffect(() => {
+    if (albums) {
+      console.log(albums,"sethereee")
+      setLocalAlbums(albums.products);
+    }
+  }, [albums]);
 
   async function submitAlbum(event) {
     event.preventDefault();
     const title = event.target['title'].value;
 
     if (isUpdateMode) {
+      // Update locally
+      setLocalAlbums((prevAlbums) =>
+        prevAlbums.map((album) =>
+          album.id === selectedAlbum.id ? { ...album, title } : album
+        )
+      );
+
+      // Update on the API
       await updateAlbum({ id: selectedAlbum.id, title });
-      setIsUpdateMode(false); // Reset to create mode
+      setIsUpdateMode(false);
     } else {
+      // Create locally
+      const newAlbum = { id: Date.now(), title };
+      setLocalAlbums((prevAlbums) => [...prevAlbums, newAlbum]);
+
+      // Create on the API
       await createAlbum(title);
     }
 
     event.target.reset();
-    refetch(); // Refetch the list of albums after creating/updating
+    refetch(); // Refetch the list of albums from the API
   }
 
   async function handleDeleteAlbum(albumId) {
+    // Delete locally
+    setLocalAlbums((prevAlbums) => prevAlbums.filter((album) => album.id !== albumId));
+
+    // Delete on the API
     await deleteAlbum(albumId);
-    refetch(); // Refetch the list of albums after deleting
+    refetch(); // Refetch the list of albums from the API
   }
 
   function setUpdateMode(album) {
@@ -74,18 +101,17 @@ export default function NewAlbumForm() {
       <div>
         <h3>Albums</h3>
         <ul>
-          {albums &&
-            albums?.products.map((album) => (
-              <li key={album.id}>
-                {album.title}{' '}
-                <button type='button' onClick={() => setUpdateMode(album)}>
-                  Update
-                </button>
-                <button type='button' onClick={() => handleDeleteAlbum(album.id)}>
-                  Delete
-                </button>
-              </li>
-            ))}
+          {localAlbums.map((album) => (
+            <li key={album.id}>
+              {album.title}{' '}
+              <button type='button' onClick={() => setUpdateMode(album)}>
+                Update
+              </button>
+              <button type='button' onClick={() => handleDeleteAlbum(album.id)}>
+                Delete
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

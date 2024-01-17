@@ -1,46 +1,46 @@
-import { useGetAlbumsQuery } from "../services/jsonServerApi";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useGetAlbumsQuery, useDeleteAlbumMutation } from "../services/jsonServerApi";
+
 export default function Albums() {
-    const [page, setPage] = useState(1);
-    const {
-        data: albums = [],
-        isLoading,
-        isFetching,
-        isError,
-        error,
-    } = useGetAlbumsQuery(page);
-    console.log(albums, "eventttttt111")
-    if (isLoading || isFetching) {
-        return <div>loading...</div>;
-    }
+  const [page, setPage] = useState(1);
+  const { data: albumsData, refetch } = useGetAlbumsQuery(page);
+  const [localAlbums, setLocalAlbums] = useState([]);
+  const [deleteAlbum] = useDeleteAlbumMutation();
 
-    if (isError) {
-        console.log({ error });
-        return <div>{error.status}</div>;
+  useEffect(() => {
+    if (albumsData) {
+      setLocalAlbums(albumsData.products);
     }
+  }, [albumsData]);
 
-    return (
-        <>
-            <ul>
-                {albums?.products?.map((album) => (
-                    <li key={album.id}>
-                        {album.id} - {album.title}
-                    </li>
-                ))}
-                {console.log("floe here")}
-            </ul>
-            <button
-                disabled={page?.products <= 1}
-                onClick={() => setPage((prev) => prev - 1)}
-            >
-                Prev
-            </button>
-            <button
-                disabled={albums?.products?.length < 10}
-                onClick={() => setPage((prev) => prev + 1)}
-            >
-                Next
-            </button>
-        </>
-    );
+  async function handleDeleteAlbum(albumId) {
+    // Delete locally
+    setLocalAlbums((prevAlbums) => prevAlbums.filter((album) => album.id !== albumId));
+
+    // Delete on the API
+    await deleteAlbum(albumId);
+    refetch(); // Refetch the list of albums from the API
+  }
+
+  return (
+    <>
+      <ul>
+        {localAlbums.map((album) => (
+          <li key={album.id}>
+            {album.id} - {album.title}
+            <button onClick={() => handleDeleteAlbum(album.id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+      <button disabled={page <= 1} onClick={() => setPage((prev) => prev - 1)}>
+        Prev
+      </button>
+      <button
+        disabled={localAlbums.length < 10}
+        onClick={() => setPage((prev) => prev + 1)}
+      >
+        Next
+      </button>
+    </>
+  );
 }

@@ -4,7 +4,7 @@ import NewAlbumForm from "./components/newAlbumForm";
 function App() {
   return (
     <div>
-      <Albums />
+      {/* <Albums /> */}
       <NewAlbumForm/>
     </div>
   );
