@@ -42,7 +42,7 @@ export default function NewAlbumForm() {
       setIsUpdateMode(false);
     } else {
       // Create locally
-      const newAlbum = { id: Date.now(), title };
+      const newAlbum = { id: "", title };
       setLocalAlbums((prevAlbums) => [...prevAlbums, newAlbum]);
 
       // Create on the API
@@ -102,7 +102,8 @@ export default function NewAlbumForm() {
         <h3>Albums</h3>
         <ul>
           {localAlbums.map((album) => (
-            <li key={album.id}>
+            <p>
+              {album.id}{".     "}
               {album.title}{' '}
               <button type='button' onClick={() => setUpdateMode(album)}>
                 Update
@@ -110,7 +111,7 @@ export default function NewAlbumForm() {
               <button type='button' onClick={() => handleDeleteAlbum(album.id)}>
                 Delete
               </button>
-            </li>
+            </p>
           ))}
         </ul>
       </div>
